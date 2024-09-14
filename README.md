@@ -7,6 +7,21 @@ This payload allows you to remotely control a target's machine using a reverse s
 
 ### **Setup Instructions**
 
+### **Requirements**
+
+Before running the payload, ensure that the following Python modules are installed:
+
+```bash
+pip install socket subprocess os time ctypes random pickle opencv-python numpy threading struct pyautogui re json base64 pynput sqlite3 pycryptodome
+```
+
+Additionally, ensure that **`win32crypt`** is available (this should be included in the **pywin32** package) and that **`Game`** module is implemented for game functionality.
+
+Install **pywin32** if needed:
+```bash
+pip install pywin32
+```
+
 #### **Step 1: Set Up Ngrok**
 1. Download Ngrok and run the following command to create a tunnel for port **8080**:
    ```bash
@@ -69,3 +84,13 @@ nc -lvnp 8080
 - **Command Errors**: If a custom command doesn’t execute, check the Python script to ensure all necessary modules are installed (`cv2`, `pynput`, etc.).
 
 This setup allows for powerful remote control using Ngrok and ncat, with real-time screen sharing and more.
+
+### **Author and Legal Information**
+
+- **Author**: PhantomCode
+- **Version**: 3.6
+- **Project**: Reverse Shell Payload Generator
+
+#### **Legal Disclaimer**:
+This tool is intended for educational and authorized testing purposes only. The author is not responsible for any misuse or damage caused by this tool. Unauthorized use, including but not limited to, accessing computers or networks without permission, is illegal and punishable by law. Always ensure you have explicit permission from the system's owner before conducting any tests.
+
