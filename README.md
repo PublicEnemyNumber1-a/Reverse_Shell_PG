@@ -12,7 +12,7 @@ The Payload Generator V4.0 is an advanced tool designed for remotely controlling
 Before running the payload, ensure the following Python modules are installed on the attacker's machine:
 
 ```bash
-pip install socket subprocess os time ctypes random pickle opencv-python numpy pyaudio pynput pywin32 threading struct pyautogui re json base64 pycryptodome
+pip install socket subprocess os time ctypes random pickle opencv-python numpy pyaudio pynput pywin32 threading struct pyautogui re json base64 pycryptodomex
 ```
 
 Install **pywin32** (for Windows-based targets) if necessary:
