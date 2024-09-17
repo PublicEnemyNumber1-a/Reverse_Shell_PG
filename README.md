@@ -1,5 +1,8 @@
 ### **Documentation for Payload Generator V4.0 by PhantomCode**
 
+# Copyright (c) 2024 Gabriel. All rights reserved.
+
+
 #### **Purpose:**
 The Payload Generator V4.0 is an advanced tool designed for remotely controlling a target’s machine using a reverse shell. It provides functionality for real-time webcam streaming, screen sharing, file management (upload/download), system manipulation (lock, shutdown, reboot), keylogging, and credential extraction (e.g., Google Chrome logins and Wi-Fi passwords). This version also includes integration with Ngrok for tunneling through NAT/firewalls and Ncat for TCP connections.
 
