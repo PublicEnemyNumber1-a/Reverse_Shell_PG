@@ -42,14 +42,13 @@ nc -lvnp 8080
 
 #### **Configure and Run the Payload:**
 
-1. Open the **Payload_generator_V-4.0.py** file and modify the following:
-   - **Attacker IP**: The IP address from the Ngrok connection (`0.tcp.ngrok.io`).
-   - **Attacker Port**: The port number provided by Ngrok (`xxxxx`).
 
-2. After modifying these details, run the Python script to generate and execute the payload on the target machine:
+1. After modifying these details, run the Python script to generate and execute the payload on the target machine:
    ```bash
    python Payload_generator_V-4.0.py
    ```
+   - **Attacker IP**: The IP address from the Ngrok connection (`0.tcp.ngrok.io`).
+   - **Attacker Port**: The port number provided by Ngrok (`xxxxx`).
 
 Once the payload is executed on the target, the reverse shell will establish a connection back to your Ncat listener.
 
