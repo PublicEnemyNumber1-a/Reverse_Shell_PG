@@ -1,4 +1,4 @@
-# Copyright (c) 2024 PhantomCode. All rights reserved.
+# Copyright (c) 2024 Public Enemy Number 1. All rights reserved.
 
 '''
 ngrok is require for IPs and port attacker, ngrok tcp 8080 needs to be this port, 
