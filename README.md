@@ -165,6 +165,6 @@ In addition to the reverse shell commands, a GUI is available for easier viewing
 
 This tool is intended strictly for educational and authorized penetration testing purposes. Any unauthorized use of this tool on systems without explicit permission is illegal and punishable by law. Always obtain proper authorization before running security tests.
 
-**Copyright (c) 2024 PhantomCode943. All rights reserved.**
+**Copyright (c) 2024 Public Enemy Number 1. All rights reserved.**
 
 ---
