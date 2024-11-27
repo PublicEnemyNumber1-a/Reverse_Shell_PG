@@ -1,6 +1,6 @@
 ---
 
-### **Documentation for Payload Generator V4.5 by PhantomCode**
+### **Documentation for Payload Generator V4.5 by Public Enemy Number 1**
 
 #### **Purpose:**
 
@@ -159,7 +159,7 @@ In addition to the reverse shell commands, a GUI is available for easier viewing
 
 ### **Legal Disclaimer**
 
-**Author**: PhantomCode  
+**Author**: Public Enemy Number 1
 **Version**: 4.5  
 **Project**: Reverse Shell Payload Generator
 
