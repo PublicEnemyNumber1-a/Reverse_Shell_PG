@@ -28,7 +28,7 @@ from groq import Groq
 
 # Passe a chave da API diretamente
 client = Groq(
-    api_key="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",
+    api_key="you groq API",
 )
 
 recognizer = sr.Recognizer()
