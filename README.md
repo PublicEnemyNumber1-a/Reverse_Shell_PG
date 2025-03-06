@@ -27,6 +27,10 @@ Before running the payload, ensure that the following Python modules are install
 pip install socket subprocess os time ctypes random pickle opencv-python numpy pyaudio pynput pywin32 threading struct pyautogui re json base64 pycryptodomex pyarmor
 ```
 
+```bash
+pip install pyttsx3 speechrecognition pyqt5 requests pyautogui pywhatkit groq tk
+```
+
 For Windows-based targets, also install **pywin32**:
 
 ```bash
